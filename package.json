@@ -13,7 +13,10 @@
     "@tailwindcss/vite": "^4.3.2",
     "lucide-react": "^1.23.0",
     "react": "^19.2.7",
-    "react-dom": "^19.2.7"
+    "react-dom": "^19.2.7",
+    "react-is": "^19.2.7",
+    "react-simple-maps": "^3.0.0",
+    "recharts": "^3.9.1"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
