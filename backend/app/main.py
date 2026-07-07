@@ -5,6 +5,8 @@ from backend.app.routes.user import router as user_router
 from backend.app.routes.message_shield import router as message_shield_router
 from fastapi.middleware.cors import CORSMiddleware
 from backend.app.routes import url_shield
+from backend.app.routes import qr_shield
+
 # Initialize database tables
 Base.metadata.create_all(bind=engine)
 
@@ -13,6 +15,7 @@ app = FastAPI(
     version="1.0.0"
 )
 app.include_router(url_shield.router, prefix="/api", tags=["URL Shield"])
+app.include_router(qr_shield.router, prefix="/api", tags=["QR Guard"])
 # Enable CORS so the React frontend on any port can access this API safely
 app.add_middleware(
     CORSMiddleware,
