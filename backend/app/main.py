@@ -4,7 +4,7 @@ from backend.app.models.user import User
 from backend.app.routes.user import router as user_router
 from backend.app.routes.message_shield import router as message_shield_router
 from fastapi.middleware.cors import CORSMiddleware
-
+from backend.app.routes import url_shield
 # Initialize database tables
 Base.metadata.create_all(bind=engine)
 
@@ -12,7 +12,7 @@ app = FastAPI(
     title="PhishX API",
     version="1.0.0"
 )
-
+app.include_router(url_shield.router, prefix="/api", tags=["URL Shield"])
 # Enable CORS so the React frontend on any port can access this API safely
 app.add_middleware(
     CORSMiddleware,
@@ -23,6 +23,7 @@ app.add_middleware(
 )
 
 # User routes grouped under /users
+
 app.include_router(user_router, prefix="/users", tags=["users"])
 
 # Match your friend's frontend route structure precisely:
