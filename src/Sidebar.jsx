@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, ShieldAlert, ShieldCheck, QrCode, Settings, HelpCircle } from 'lucide-react';
+import { LayoutDashboard, ShieldAlert, ShieldCheck, QrCode, Mail, Settings, HelpCircle } from 'lucide-react'; // 👈 Added Mail import
 
 export default function Sidebar({ currentView, setCurrentView }) {
   const menuItems = [
@@ -7,6 +7,7 @@ export default function Sidebar({ currentView, setCurrentView }) {
     { id: 'url-scanner', name: 'URL Scanner', icon: ShieldAlert },
     { id: 'message-shield', name: 'Message Shield', icon: ShieldCheck },
     { id: 'qr-guard', name: 'QR Guard', icon: QrCode },
+    { id: 'email-scanner', name: 'Email Scanner', icon: Mail }, // 👈 Added Email Scanner to Navigation list
   ];
 
   return (

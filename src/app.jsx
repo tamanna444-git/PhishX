@@ -6,6 +6,7 @@ import DashboardView from './DashboardView';
 import UrlScannerView from './UrlScannerView'; 
 import MessageShieldView from './MessageShieldView'; 
 import QrGuardView from './QRguardscanner'; 
+import EmailScanner from './EmailScanner'; // 👈 Added EmailScanner Import
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -18,6 +19,7 @@ function App() {
       case 'url-scanner': return <UrlScannerView />;
       case 'message-shield': return <MessageShieldView />;
       case 'qr-guard': return <QrGuardView />;
+      case 'email-scanner': return <EmailScanner />; // 👈 Added Router State Case
       default: return <DashboardView />;
     }
   };
@@ -33,6 +35,7 @@ function App() {
   return (
     <div className="flex h-screen bg-[#090d16] text-gray-200 overflow-hidden font-mono animate-fade-in">
       {/* Structural Website Navigation Sidebar */}
+      {/* Note: Ensure you update your <Sidebar /> component internal menu buttons to pass 'email-scanner' to setCurrentView */}
       <Sidebar currentView={currentView} setCurrentView={setCurrentView} />
       
       {/* Core Website Panel Content Workspace Container */}
