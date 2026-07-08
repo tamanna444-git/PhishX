@@ -1,36 +1,42 @@
 import React, { useState, useEffect } from 'react';
 
-// Simulated Real-Time Backend Stream / Endpoint Connection
+// Live Connection to Your FastAPI Backend Router Node
+// Connected Live Real-Time Backend Stream
 const streamAnalysisFromBackend = async (messageContent) => {
   try {
-    // ⬇️ WHEN CONNECTING YOUR ACTUAL BACKEND, UNCOMMENT AND USE THIS SECTION:
-    // const response = await fetch('https://api.yourdomain.com/v1/stream-analyze', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({ message: messageContent })
-    // });
-    // return await response.json();
+    // 1. Point to your local FastAPI server running on port 8000
+    const response = await fetch('http://127.0.0.1:8000/api/stream-analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      // 2. Wrap her state text string inside a JSON key named "message" 
+      body: JSON.stringify({ message: messageContent }) 
+    });
 
-    // ⬇️ CURRENT MOCK: Forces 0 output values until live backend node is wired in
-    return new Promise((resolve) => setTimeout(() => {
-      resolve({
-        aiLikelihood: 0,
-        status: "READY",
-        perplexity: 0.0,
-        burstiness: 0.0
-      });
-    }, 400)); // Low latency feedback delay
+    if (!response.ok) {
+      throw new Error(`Server responded with status code: ${response.status}`);
+    }
+
+    // 3. Return the exact JSON dictionary keys your backend outputs
+    return await response.json(); 
   } catch (error) {
     console.error("Live backend node connection error:", error);
-    throw error;
+    
+    // Graceful visual fallback state if you turn off your server
+    return {
+      aiLikelihood: 0,
+      status: "SERVER_OFFLINE",
+      perplexity: 0.0,
+      burstiness: 0.0
+    };
   }
 };
+    
 
 export default function MessageShield() {
   const [inputText, setInputText] = useState('');
   const [isScanning, setIsScanning] = useState(false);
   
-  // Metrics explicitly initialized at 0
+  // Metrics initialized dynamically at zero state
   const [metrics, setMetrics] = useState({
     aiLikelihood: 0,
     status: 'READY',
@@ -117,7 +123,7 @@ export default function MessageShield() {
                   </button>
                 </div>
                 
-                {/* Active connection indicator badge replaces the old manual scan click button */}
+                {/* Active connection indicator badge */}
                 <div className="px-4 py-2 text-xs bg-[#0b1424] border border-[#1e293b] text-gray-400 font-mono rounded flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
                   REAL-TIME NODE ACTIVE
@@ -157,7 +163,7 @@ export default function MessageShield() {
                     {metrics.aiLikelihood}<span className="text-2xl text-gray-500">%</span>
                   </div>
                   <span className="text-xs text-gray-400 block mt-1">
-                    {metrics.aiLikelihood > 0 ? 'Likely AI Generated' : 'Awaiting Backend...'}
+                    {metrics.aiLikelihood > 0 ? 'Analysis Active' : 'Awaiting Backend...'}
                   </span>
                 </div>
                 <span className="bg-[#14233c] text-gray-300 text-[10px] font-mono px-2 py-0.5 rounded border border-gray-700">

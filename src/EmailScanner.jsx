@@ -1,16 +1,23 @@
 import React, { useState } from 'react';
 
-// Simulated Threat Intel Backend (Hardcoded to zero until backend is active)
+// Threat Intel Backend Fetcher with Mock Fallback
 const searchEmailIntelFromBackend = async (emailAddress) => {
   try {
-    // ⬇️ WHEN CONNECTING YOUR ACTUAL BACKEND, UNCOMMENT AND USE THIS SECTION:
-    // const response = await fetch(`https://api.yourdomain.com/v1/email-intel?email=${encodeURIComponent(emailAddress)}`, {
-    //   method: 'GET',
-    //   headers: { 'Content-Type': 'application/json' }
-    // });
-    // return await response.json();
+    // Hits your active local port using a clean URL query string parameter structure
+    const response = await fetch(`http://127.0.0.1:8000/api/email-intel?email=${encodeURIComponent(emailAddress)}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
 
-    // ⬇️ CURRENT MOCK: Hard-coded to zero output telemetry metrics
+    if (!response.ok) {
+      throw new Error(`Server returned status code: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.warn("Intel database node connection failed. Falling back to local mock sequence...", error);
+    
+    // FALLBACK MOCK: Simulates backend latency and returns zeroed-out telemetry data
     return new Promise((resolve) => setTimeout(() => {
       resolve({
         reliabilityRating: 0,
@@ -19,10 +26,7 @@ const searchEmailIntelFromBackend = async (emailAddress) => {
         searchHistoryCount: 0,
         verdict: "AWAITING_BACKEND"
       });
-    }, 600)); 
-  } catch (error) {
-    console.error("Intel database node connection error:", error);
-    throw error;
+    }, 600));
   }
 };
 
@@ -67,7 +71,7 @@ export default function EmailScanner() {
         verdict: intelData.verdict
       });
     } catch (err) {
-      console.error("MX Core synchronization failed", err);
+      console.error("MX Core synchronization completely failed", err);
     } finally {
       setIsScanning(false);
     }
@@ -167,7 +171,6 @@ export default function EmailScanner() {
               <div className="mt-6 pt-4 border-t border-[#141f32] flex flex-col items-center">
                 <div className="flex items-end gap-1 h-12 justify-center w-full">
                   {[45, 60, 55, 75, 85, 95, 70, 90].map((baseHeight, i) => {
-                    // Logic forces flat baseline since rating is strictly 0
                     const finalHeight = metrics.reliabilityRating > 0 ? (baseHeight * (metrics.reliabilityRating / 100)) : 4;
                     return (
                       <div 

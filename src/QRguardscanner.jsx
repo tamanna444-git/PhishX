@@ -3,14 +3,58 @@ import React, { useState } from 'react';
 // Simulated Backend QR & Domain Security Analysis
 const analyzeQRCodeFromBackend = async (fileObj) => {
   try {
-    // ⬇️ WHEN CONNECTING YOUR ACTUAL BACKEND, UNCOMMENT AND USE THIS SECTION:
-    // const formData = new FormData();
-    // formData.append('qrfile', fileObj);
-    // const response = await fetch('https://api.yourdomain.com/v1/analyze-qr', {
-    //   method: 'POST',
-    //   body: formData
-    // });
-    // return await response.json();
+    // Connected Live Backend QR Security Analysis
+const analyzeQRCodeFromBackend = async (fileObj) => {
+  try {
+    // 1. Create a standard JavaScript FormData instance for image file upload
+    const formData = new FormData();
+    
+    // CRITICAL: The first argument 'file' must match your FastAPI endpoint signature exactly!
+    formData.append('file', fileObj);
+
+    // 2. Point directly to your active local server endpoint
+    const response = await fetch('http://127.0.0.1:8000/api/qr-analyze', {
+      method: 'POST',
+      body: formData // No headers required; the browser automatically sets multipart/form-data
+    });
+
+    if (!response.ok) {
+      throw new Error(`Server returned status code: ${response.status}`);
+    }
+
+    const backendData = await response.json();
+
+    // 3. Translate your backend variables into her exact UI state keys
+    if (backendData.success) {
+      return {
+        // Map confidence percentage (or inverse risk) to her Reliability state
+        reliabilityScore: backendData.is_url ? backendData.confidence_percentage : 100,
+        // Since the pre-trained URL model doesn't look at WHOIS data yet, pass a clean placeholder
+        domainAgeDays: backendData.is_url ? 180 : 0, 
+        // Read the HTTPS feature value from your extractor loop
+        sslStatus: backendData.content.startsWith("https") ? "VALID_HTTPS" : "UNENCRYPTED_HTTP",
+        // Pass your direct ML classification text string over ("Safe" or "Phishing")
+        threatLevel: backendData.prediction.toUpperCase()
+      };
+    } else {
+      return {
+        reliabilityScore: 0,
+        domainAgeDays: 0,
+        sslStatus: "FAILED_TO_PARSE",
+        threatLevel: "NO_QR_MATRIX_FOUND"
+      };
+    }
+
+  } catch (error) {
+    console.error("QR Analysis node connection error:", error);
+    return {
+      reliabilityScore: 0,
+      domainAgeDays: 0,
+      sslStatus: "OFFLINE",
+      threatLevel: "SERVER_DISCONNECTED"
+    };
+  }
+};
 
     // ⬇️ CURRENT MOCK: Forces 0 output values until live backend node is wired in
     return new Promise((resolve) => setTimeout(() => {
@@ -18,7 +62,7 @@ const analyzeQRCodeFromBackend = async (fileObj) => {
         reliabilityScore: 0,
         domainAgeDays: 0,
         sslStatus: "UNKNOWN",
-        threatLevel: "AWAITING_BACKEND"
+        threatLevel: "READY"
       });
     }, 800)); 
   } catch (error) {
