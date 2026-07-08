@@ -61,7 +61,8 @@ def extract_features(url: str):
     }])
     return features_df, domain
 
-@router.post("/url-analyze")
+# Change from: @router.post("/url-analyze")
+@router.post("/url-analyze") # Keep this if she hits url-analyze, or change to "/analyze" to match her URL scanner code exactly. Let's make sure it matches whatever her code hits!
 def analyze_url(data: URLRequest):
     url = data.url
     if not url:
