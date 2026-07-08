@@ -1,14 +1,15 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend.app.routes import url_shield, qr_shield, message_shield
-from backend.app.routes import email_shield
+
+# Explicitly pull the individual router files from your routes folder package
+from backend.app.routes import url_shield, qr_shield, message_shield, email_shield
+from backend.app.routes.user import router as user_router # 👈 CHANGE THIS LINE!
 
 app = FastAPI(title="PhishX Security Core", version="4.2.0")
 
-# CRITICAL: This allows her local React server to talk to your FastAPI server!
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows her local frontend server port to connect
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -19,8 +20,8 @@ app.include_router(url_shield.router, prefix="/api", tags=["URL Shield"])
 app.include_router(qr_shield.router, prefix="/api", tags=["QR Guard"])
 app.include_router(message_shield.router, prefix="/api", tags=["Message Shield"])
 app.include_router(email_shield.router, prefix="/api", tags=["Email Shield"])
+app.include_router(user_router, prefix="/api/user", tags=["User Authentication"]) # 👈 CHANGE THIS LINE TOO!
 
-# Live telemetry aggregator endpoint for her DashboardView.jsx
 @app.get("/api/dashboard/metrics")
 async def get_dashboard_metrics():
     return {
