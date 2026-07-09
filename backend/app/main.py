@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 # Explicitly pull the individual router files from your routes folder package
 from backend.app.routes import url_shield, qr_shield, message_shield, email_shield
-from backend.app.routes.user import router as user_router # 👈 CHANGE THIS LINE!
+from backend.app.routes.user import router as user_router
 
 app = FastAPI(title="PhishX Security Core", version="4.2.0")
 
@@ -20,7 +20,8 @@ app.include_router(url_shield.router, prefix="/api", tags=["URL Shield"])
 app.include_router(qr_shield.router, prefix="/api", tags=["QR Guard"])
 app.include_router(message_shield.router, prefix="/api", tags=["Message Shield"])
 app.include_router(email_shield.router, prefix="/api", tags=["Email Shield"])
-app.include_router(user_router, prefix="/api/user", tags=["User Authentication"]) # 👈 CHANGE THIS LINE TOO!
+app.include_router(user_router, prefix="/api/user", tags=["User Authentication"])
+
 
 @app.get("/api/dashboard/metrics")
 async def get_dashboard_metrics():
@@ -32,10 +33,11 @@ async def get_dashboard_metrics():
         "urlsScannedToday": 342,
         "messagesShielded": 1105,
         "qrCodesAnalyzed": 89,
-        "emailsScanned": 0, 
+        "emailsScanned": 0,
         "activeProbes": 2,
         "lastIncidentTime": "2H Ago"
     }
+
 
 @app.get("/")
 def read_root():
