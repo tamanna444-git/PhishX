@@ -11,7 +11,7 @@ function Authentication({ onAuthenticate }) {
 
   // Make sure this matches the port your backend is actually running on.
   // The included server.js listens on 5000 by default.
-  const API_URL = 'http://localhost:5000/api/auth';
+  const API_URL = 'http://127.0.0.1:8000/api/user';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
