@@ -9,9 +9,9 @@ function Authentication({ onAuthenticate }) {
   const [statusMessage, setStatusMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Make sure this matches the port your backend is actually running on.
-  // The included server.js listens on 5000 by default.
-  const API_URL = 'http://127.0.0.1:8000/api/user';
+  // FastAPI backend running via uvicorn — default port 8000.
+  // Confirmed routes from Swagger: /api/user/register and /api/user/login
+ const API_URL = 'http://127.0.0.1:8000/api/user';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -26,13 +26,11 @@ function Authentication({ onAuthenticate }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          operatorId: operatorId.trim(),
-          neuralKey: neuralKey
+          operator_id: operatorId.trim(),
+          neural_key: neuralKey
         })
       });
 
-      // response.json() throws if the server sent back non-JSON (e.g. an HTML
-      // error page), so we guard it and surface a clearer message.
       let data;
       try {
         data = await response.json();
@@ -41,7 +39,17 @@ function Authentication({ onAuthenticate }) {
       }
 
       if (!response.ok) {
-        throw new Error(data.error || 'Protocol initialization failed.');
+        let backendMessage = 'Protocol initialization failed.';
+        if (typeof data.detail === 'string') {
+          backendMessage = data.detail;
+        } else if (Array.isArray(data.detail) && data.detail.length > 0) {
+          backendMessage = data.detail
+            .map((d) => `${d.loc?.[d.loc.length - 1]}: ${d.msg}`)
+            .join(' | ');
+        } else if (data.error) {
+          backendMessage = data.error;
+        }
+        throw new Error(backendMessage);
       }
 
       if (isSignUp) {
@@ -58,11 +66,9 @@ function Authentication({ onAuthenticate }) {
         }
       }
     } catch (error) {
-      // "Failed to fetch" specifically means the browser could not reach
-      // the server at all — it's down, the port is wrong, or CORS blocked it.
       if (error.message === 'Failed to fetch') {
         setErrorMessage(
-          `Cannot reach backend at ${API_URL}. Is the server running? (npm start in the backend folder)`
+          `Cannot reach backend at ${API_URL}. Is the server running?`
         );
       } else {
         setErrorMessage(error.message || 'Network sync error. Terminal offline.');
