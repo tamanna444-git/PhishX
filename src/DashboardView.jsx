@@ -3,7 +3,7 @@ import { Globe } from 'lucide-react';
 
 export default function DashboardView() {
   // -------------------------------------------------------------
-  // STERILE BACKEND INTEGRATION STATES (All Reset to Zero)
+  // BACKEND INTEGRATION STATES
   // -------------------------------------------------------------
   const [metrics, setMetrics] = useState({
     secureEndpoints: "0.0%",
@@ -20,52 +20,41 @@ export default function DashboardView() {
 
   // Empty stream collection for live socket feeds
   const [liveFeeds, setLiveFeeds] = useState([]);
+  const [isConnected, setIsConnected] = useState(true);
 
   useEffect(() => {
     // -------------------------------------------------------------
-    // PRODUCTION BACKEND HOOKS
-    // Un-comment and configure these endpoints when connecting your backend:
+    // ACTIVE PRODUCTION REST API POLLING (Every 5 seconds)
     // -------------------------------------------------------------
-    
-    /* ---- Method A: REST API Polling (Every 10 seconds) ----
     const fetchDashboardMetrics = async () => {
       try {
-        const response = await fetch('/api/v1/dashboard/metrics');
+        const response = await fetch('http://127.0.0.1:8000/api/dashboard/metrics');
+        if (!response.ok) {
+          throw new Error(`HTTP network error: status ${response.status}`);
+        }
         const data = await response.json();
         setMetrics(data); // Expecting structural match with the 'metrics' state object
+        setIsConnected(true);
       } catch (error) {
         console.error("Failed to query core metrics gateway:", error);
+        setIsConnected(false);
       }
     };
     
+    // Initial fetch call on load
     fetchDashboardMetrics();
-    const pollingInterval = setInterval(fetchDashboardMetrics, 10000);
-    */
-
-    /* ---- Method B: Live WebSockets Stream (Real-time updates) ----
-    const socket = new WebSocket('ws://your-backend-endpoint/telemetry');
     
-    socket.onmessage = (event) => {
-      const payload = JSON.parse(event.data);
-      
-      if (payload.type === 'METRICS_UPDATE') {
-        setMetrics(payload.data);
-      } else if (payload.type === 'NEW_LOG') {
-        // Appends new server streams, capping the display at latest 10 elements
-        setLiveFeeds(prev => [payload.data, ...prev.slice(0, 9)]);
-      }
-    };
-    */
+    // Set up real-time sync loop
+    const pollingInterval = setInterval(fetchDashboardMetrics, 5000);
 
     // Cleanup routines on component unmount
     return () => {
-      // clearInterval(pollingInterval);
-      // socket.close();
+      clearInterval(pollingInterval);
     };
   }, []);
 
-  // Daily target quotas used to calculate progress fill bar scaling metrics
-  const targets = { urls: 5000, messages: 20000, qr: 1000, emails: 15000 };
+  // 🌟 FIXED REALISTIC DAILY TARGET QUOTAS FOR EXCELLENT PROGRESS BAR SCALING VISUALIZATION
+  const targets = { urls: 500, messages: 1500, qr: 150, emails: 50 };
 
   return (
     <div className="space-y-6 max-w-[1600px] w-full mx-auto select-none p-2">
@@ -76,14 +65,21 @@ export default function DashboardView() {
         {/* Core Defense Block */}
         <div className="lg:col-span-2 bg-[#0a1224] border border-slate-800/80 rounded-xl p-6 flex flex-col justify-between">
           <div>
-            <h2 className="text-3xl font-extrabold tracking-tight mb-2 text-slate-100">Aegis Core Defense</h2>
+            <div className="flex justify-between items-start">
+              <h2 className="text-3xl font-extrabold tracking-tight mb-2 text-slate-100">Aegis Core Defense</h2>
+              {!isConnected && (
+                <span className="bg-rose-950/40 text-rose-400 text-[9px] font-mono border border-rose-800/30 px-2 py-0.5 rounded animate-pulse">
+                  GATEWAY_DISCONNECTED
+                </span>
+              )}
+            </div>
             <p className="text-xs text-slate-400 max-w-xl leading-relaxed">
               AI-driven neural network analysis monitoring active endpoints across the structural perimeter.
             </p>
           </div>
           <div className="flex gap-3 mt-6">
-            <button className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 px-4 py-2 rounded font-semibold text-xs transition-colors">Run Full System Scan</button>
-            <button className="border border-slate-700 hover:border-slate-500 px-4 py-2 rounded font-semibold text-xs text-slate-300 transition-colors">View Reports</button>
+            <button className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 px-4 py-2 rounded font-semibold text-xs transition-colors cursor-pointer">Run Full System Scan</button>
+            <button className="border border-slate-700 hover:border-slate-500 px-4 py-2 rounded font-semibold text-xs text-slate-300 transition-colors cursor-pointer">View Reports</button>
           </div>
           <div className="grid grid-cols-3 gap-4 mt-8 pt-6 border-t border-slate-800/50">
             <div>
@@ -146,34 +142,20 @@ export default function DashboardView() {
           </div>
           
           <div className="w-full h-72 bg-[#070d18] rounded-lg overflow-hidden border border-slate-900 relative flex items-center justify-center">
-            {/* Explicit 800x400 geographic projection projection canvas */}
             <svg viewBox="0 0 800 400" className="w-full h-full p-2" xmlns="http://www.w3.org/2000/svg">
-              {/* WORLD MAP GEOMETRY PLOT (High performance low-poly projection paths) */}
               <g fill="#16223f" stroke="#1f2d5a" strokeWidth="0.75" opacity="0.65" strokeLinejoin="round">
-                {/* North America */}
                 <path d="M100,60 L140,55 L180,70 L210,65 L220,90 L180,120 L150,115 L120,150 L90,130 L70,100 Z" />
-                {/* Greenland */}
                 <path d="M240,40 L280,35 L290,55 L260,70 Z" />
-                {/* South America */}
                 <path d="M165,190 L200,200 L240,250 L220,320 L195,350 L185,320 L175,250 L155,210 Z" />
-                {/* Africa */}
                 <path d="M360,160 L410,150 L450,170 L470,200 L440,240 L415,290 L395,310 L390,260 L365,220 L350,180 Z" />
-                {/* Europe & Asia (Eurasia) */}
                 <path d="M360,130 L400,100 L450,70 L550,65 L680,75 L720,100 L700,140 L650,130 L610,170 L570,180 L520,150 L460,140 L420,140 Z" />
-                {/* India Subcontinent */}
                 <path d="M545,150 L565,155 L560,175 L545,185 L535,170 Z" fill="#1c3266" />
-                {/* Australia */}
                 <path d="M630,260 L680,255 L700,285 L675,310 L635,295 Z" />
-                {/* Minor Islands (UK, Iceland) */}
                 <path d="M330,90 L345,95 L340,105 Z" />
                 <path d="M300,70 L315,75 L310,80 Z" />
               </g>
-
-              {/* Grid Overlays */}
               <path d="M150,150 Q180,100 250,120 T400,110 T550,160 T700,130" fill="none" stroke="#22d3ee" strokeWidth="0.5" opacity="0.1" strokeDasharray="4,4" />
               <path d="M100,250 Q220,300 350,220 T600,280 T750,210" fill="none" stroke="#22d3ee" strokeWidth="0.5" opacity="0.1" strokeDasharray="4,4" />
-
-              {/* DYNAMIC PERIMETER OVERLAYS: Renders vector beam alerts when telemetry data flows */}
               {metrics.riskLevel > 0 && (
                 <>
                   <path d="M160,120 Q350,40 550,175" fill="none" stroke="#ef4444" strokeWidth="1.5" strokeDasharray="4,4" className="animate-pulse" />
@@ -183,7 +165,6 @@ export default function DashboardView() {
                 </>
               )}
             </svg>
-
             <div className="absolute bottom-4 right-4 bg-[#0a1224]/95 border border-slate-800 p-3 rounded shadow-lg backdrop-blur-sm text-[11px] font-mono max-w-xs">
               <div className="text-slate-500 font-bold mb-1">SYSTEM MONITOR</div>
               <div className="text-slate-600 text-[10px]">

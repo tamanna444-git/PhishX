@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 
-// Threat Intel Backend Fetcher with Mock Fallback
+// Threat Intel Backend Fetcher
 const searchEmailIntelFromBackend = async (emailAddress) => {
   try {
-    // Hits your active local port using a clean URL query string parameter structure
     const response = await fetch(`http://127.0.0.1:8000/api/email-intel?email=${encodeURIComponent(emailAddress)}`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' }
@@ -15,18 +14,14 @@ const searchEmailIntelFromBackend = async (emailAddress) => {
 
     return await response.json();
   } catch (error) {
-    console.warn("Intel database node connection failed. Falling back to local mock sequence...", error);
-    
-    // FALLBACK MOCK: Simulates backend latency and returns zeroed-out telemetry data
-    return new Promise((resolve) => setTimeout(() => {
-      resolve({
-        reliabilityRating: 0,
-        spamScore: 0,
-        dkimSpfStatus: "UNVERIFIED",
-        searchHistoryCount: 0,
-        verdict: "AWAITING_BACKEND"
-      });
-    }, 600));
+    console.error("Intel database node connection failed:", error);
+    return {
+      reliabilityRating: 0,
+      spamScore: 10,
+      dkimSpfStatus: "OFFLINE",
+      searchHistoryCount: 0,
+      verdict: "SERVER_ERROR"
+    };
   }
 };
 
@@ -34,7 +29,6 @@ export default function EmailScanner() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isScanning, setIsScanning] = useState(false);
   
-  // Explicitly initialized states at zero / unlinked state
   const [metrics, setMetrics] = useState({
     reliabilityRating: 0,
     spamScore: 0,
@@ -43,7 +37,6 @@ export default function EmailScanner() {
     verdict: 'READY'
   });
 
-  // Reset search console back to zeros
   const handleClearBuffer = () => {
     setSearchQuery('');
     setMetrics({
@@ -55,7 +48,6 @@ export default function EmailScanner() {
     });
   };
 
-  // Trigger search sequence
   const handleRunSearch = async (e) => {
     if (e) e.preventDefault();
     if (!searchQuery.trim()) return;
@@ -99,7 +91,7 @@ export default function EmailScanner() {
                   <span className={`inline-block w-2 h-2 rounded-full ${isScanning ? 'bg-amber-400 animate-pulse' : 'bg-[#00e5ff]'}`} />
                   GLOBAL_INTEL_LOOKUP
                 </div>
-                <span className="text-xs text-[#00e5ff] font-mono">
+                <span className={`text-xs font-mono ${metrics.verdict === 'MALICIOUS' ? 'text-rose-400' : 'text-[#00e5ff]'}`}>
                   {isScanning ? 'FETCHING_REPUTATION...' : metrics.verdict}
                 </span>
               </div>
@@ -115,7 +107,7 @@ export default function EmailScanner() {
                 <button
                   type="submit"
                   disabled={!searchQuery.trim() || isScanning}
-                  className={`px-8 py-4 text-xs font-bold font-mono tracking-wider rounded transition whitespace-nowrap ${
+                  className={`px-8 py-4 text-xs font-bold font-mono tracking-wider rounded transition whitespace-nowrap cursor-pointer ${
                     !searchQuery.trim() || isScanning
                       ? 'bg-gray-800 text-gray-600 cursor-not-allowed' 
                       : 'bg-[#00e5ff] text-[#060b13] hover:bg-[#00b3cc] shadow-md shadow-[#00e5ff]/10'
@@ -128,7 +120,7 @@ export default function EmailScanner() {
               <div className="flex justify-start mt-4">
                 <button 
                   onClick={handleClearBuffer}
-                  className="text-xs text-gray-500 hover:text-gray-300 transition underline underline-offset-4"
+                  className="text-xs text-gray-500 hover:text-gray-300 transition underline underline-offset-4 cursor-pointer"
                 >
                   Reset Search Terminal
                 </button>
@@ -159,10 +151,12 @@ export default function EmailScanner() {
                     {metrics.reliabilityRating}<span className="text-2xl text-gray-500">%</span>
                   </div>
                   <span className="text-xs text-gray-400 block mt-1">
-                    {metrics.verdict === 'READY' ? 'Awaiting Lookup Query...' : 'Awaiting Core Connection...'}
+                    {metrics.verdict === 'READY' ? 'Awaiting Lookup Query...' : `Safety Score Assessment: ${metrics.verdict}`}
                   </span>
                 </div>
-                <span className="bg-[#14233c] text-gray-300 text-[10px] font-mono px-2 py-0.5 rounded border border-gray-700">
+                <span className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
+                  metrics.verdict === 'MALICIOUS' ? 'bg-rose-950 text-rose-400 border-rose-800' : 'bg-[#14233c] text-gray-300 border-gray-700'
+                }`}>
                   {metrics.verdict}
                 </span>
               </div>
@@ -196,7 +190,7 @@ export default function EmailScanner() {
                   <span className="text-xl font-bold text-white block mt-1 font-mono">{metrics.spamScore} <span className="text-xs text-gray-600">/10</span></span>
                   <div className="w-full bg-[#141f32] h-1 rounded-full mt-2 overflow-hidden">
                     <div 
-                      className="h-full bg-[#00e5ff] transition-all duration-300" 
+                      className={`h-full transition-all duration-300 ${metrics.spamScore > 5 ? 'bg-rose-500' : 'bg-[#00e5ff]'}`}
                       style={{ width: `${metrics.spamScore * 10}%` }} 
                     />
                   </div>

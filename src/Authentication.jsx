@@ -11,7 +11,7 @@ function Authentication({ onAuthenticate }) {
 
   // FastAPI backend running via uvicorn — default port 8000.
   // Confirmed routes from Swagger: /api/user/register and /api/user/login
- const API_URL = 'http://127.0.0.1:8000/api/user';
+  const API_URL = 'http://127.0.0.1:8000/api/user';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -57,12 +57,15 @@ function Authentication({ onAuthenticate }) {
         setIsSignUp(false);
         setNeuralKey('');
       } else {
-        if (data.token) {
-          localStorage.setItem('operatorToken', data.token);
-          localStorage.setItem('operatorId', operatorId);
+        // FIXED: Changed data.token to data.id to match the FastAPI response keys
+        if (data.id) {
+          localStorage.setItem('operatorToken', data.id);
+          localStorage.setItem('operatorId', data.operator_id || operatorId);
           if (onAuthenticate) {
             onAuthenticate();
           }
+        } else {
+          throw new Error('Invalid payload handshake structure received from backend.');
         }
       }
     } catch (error) {
@@ -74,7 +77,7 @@ function Authentication({ onAuthenticate }) {
         setErrorMessage(error.message || 'Network sync error. Terminal offline.');
       }
     } finally {
-      setIsLoading(false);
+      isLoading(false);
     }
   };
 

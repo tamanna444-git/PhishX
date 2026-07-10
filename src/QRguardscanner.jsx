@@ -1,9 +1,6 @@
 import React, { useState } from 'react';
 
-// Simulated Backend QR & Domain Security Analysis
-const analyzeQRCodeFromBackend = async (fileObj) => {
-  try {
-    // Connected Live Backend QR Security Analysis
+// Connected Live Backend QR Security Analysis
 const analyzeQRCodeFromBackend = async (fileObj) => {
   try {
     // 1. Create a standard JavaScript FormData instance for image file upload
@@ -24,24 +21,24 @@ const analyzeQRCodeFromBackend = async (fileObj) => {
 
     const backendData = await response.json();
 
-    // 3. Translate your backend variables into her exact UI state keys
+    // 3. Translate your backend variables into your exact UI state keys
     if (backendData.success) {
+      const isSafe = backendData.prediction === "Safe";
       return {
-        // Map confidence percentage (or inverse risk) to her Reliability state
-        reliabilityScore: backendData.is_url ? backendData.confidence_percentage : 100,
-        // Since the pre-trained URL model doesn't look at WHOIS data yet, pass a clean placeholder
-        domainAgeDays: backendData.is_url ? 180 : 0, 
-        // Read the HTTPS feature value from your extractor loop
-        sslStatus: backendData.content.startsWith("https") ? "VALID_HTTPS" : "UNENCRYPTED_HTTP",
-        // Pass your direct ML classification text string over ("Safe" or "Phishing")
-        threatLevel: backendData.prediction.toUpperCase()
+        // Drop the reliability bar display down if the link is malicious to flag lack of integrity
+        reliabilityScore: isSafe ? Math.round(backendData.confidence_percentage) : Math.round(100 - backendData.confidence_percentage),
+        domainAgeDays: backendData.domain_age_days || 0, // 🔥 NOW FULLY DYNAMIC!
+        sslStatus: backendData.content?.toLowerCase().startsWith("https") ? "VALID_HTTPS" : "UNENCRYPTED_HTTP",
+        threatLevel: backendData.prediction?.toUpperCase() || "SAFE",
+        extractedContent: backendData.content || ""
       };
     } else {
       return {
         reliabilityScore: 0,
         domainAgeDays: 0,
         sslStatus: "FAILED_TO_PARSE",
-        threatLevel: "NO_QR_MATRIX_FOUND"
+        threatLevel: "NO_QR_MATRIX_FOUND",
+        extractedContent: backendData.message || "No data parsed."
       };
     }
 
@@ -51,23 +48,9 @@ const analyzeQRCodeFromBackend = async (fileObj) => {
       reliabilityScore: 0,
       domainAgeDays: 0,
       sslStatus: "OFFLINE",
-      threatLevel: "SERVER_DISCONNECTED"
+      threatLevel: "SERVER_DISCONNECTED",
+      extractedContent: "Could not establish communications pipeline with PhishX ML Core Gateway."
     };
-  }
-};
-
-    // ⬇️ CURRENT MOCK: Forces 0 output values until live backend node is wired in
-    return new Promise((resolve) => setTimeout(() => {
-      resolve({
-        reliabilityScore: 0,
-        domainAgeDays: 0,
-        sslStatus: "UNKNOWN",
-        threatLevel: "READY"
-      });
-    }, 800)); 
-  } catch (error) {
-    console.error("QR Analysis node connection error:", error);
-    throw error;
   }
 };
 
@@ -81,7 +64,8 @@ export default function QRShieldAnalyzer() {
     reliabilityScore: 0,
     domainAgeDays: 0,
     sslStatus: 'NOT_CHECKED',
-    threatLevel: 'READY'
+    threatLevel: 'READY',
+    extractedContent: ''
   });
 
   // Handle local file selection
@@ -106,7 +90,8 @@ export default function QRShieldAnalyzer() {
       reliabilityScore: 0,
       domainAgeDays: 0,
       sslStatus: 'NOT_CHECKED',
-      threatLevel: 'READY'
+      threatLevel: 'READY',
+      extractedContent: ''
     });
   };
 
@@ -121,7 +106,8 @@ export default function QRShieldAnalyzer() {
         reliabilityScore: liveData.reliabilityScore,
         domainAgeDays: liveData.domainAgeDays,
         sslStatus: liveData.sslStatus,
-        threatLevel: liveData.threatLevel
+        threatLevel: liveData.threatLevel,
+        extractedContent: liveData.extractedContent
       });
     } catch (err) {
       console.error("Analysis synchronization failed", err);
@@ -152,7 +138,7 @@ export default function QRShieldAnalyzer() {
                   <span className={`inline-block w-2 h-2 rounded-full ${isAnalyzing ? 'bg-amber-400 animate-pulse' : 'bg-[#00e5ff]'}`} />
                   QR_DECODER_BUFFER
                 </div>
-                <span className="text-xs text-[#00e5ff] font-mono">
+                <span className={`text-xs font-mono font-bold ${metrics.threatLevel === 'PHISHING' ? 'text-rose-400' : 'text-[#00e5ff]'}`}>
                   {isAnalyzing ? 'DECODING_PAYLOAD...' : metrics.threatLevel}
                 </span>
               </div>
@@ -161,10 +147,9 @@ export default function QRShieldAnalyzer() {
               <div className="flex-grow my-6 border-2 border-dashed border-[#141f32] hover:border-[#00e5ff]/50 rounded-lg flex flex-col items-center justify-center p-4 transition relative bg-[#070d19]">
                 {imagePreview ? (
                   <div className="relative flex flex-col items-center justify-center h-full max-h-[300px] group">
-                    {/* Cross option button overlay */}
                     <button
                       onClick={handleClearPhoto}
-                      className="absolute -top-4 -right-4 bg-red-500/20 hover:bg-red-500 text-red-400 hover:text-white border border-red-500/50 rounded px-2.5 py-1 text-xs font-sans transition-all duration-200 z-10 flex items-center gap-1 shadow-lg"
+                      className="absolute -top-4 -right-4 bg-red-500/20 hover:bg-red-500 text-red-400 hover:text-white border border-red-500/50 rounded px-2.5 py-1 text-xs font-sans transition-all duration-200 z-10 flex items-center gap-1 shadow-lg cursor-pointer"
                       title="Remove QR code"
                     >
                       <span>✕</span> <span className="font-medium">Close</span>
@@ -173,7 +158,7 @@ export default function QRShieldAnalyzer() {
                     <img 
                       src={imagePreview} 
                       alt="QR Preview" 
-                      className="max-h-[220px] object-contain rounded border border-[#1e293b] p-2 bg-white" 
+                      className="max-h-[200px] object-contain rounded border border-[#1e293b] p-2 bg-white" 
                     />
                     <p className="text-xs text-gray-400 mt-2 font-mono truncate max-w-xs">{selectedFile?.name}</p>
                   </div>
@@ -207,7 +192,7 @@ export default function QRShieldAnalyzer() {
                 <button
                   onClick={handleRunAnalysis}
                   disabled={!selectedFile || isAnalyzing}
-                  className={`px-6 py-2 text-xs font-bold font-mono tracking-wider rounded transition ${
+                  className={`px-6 py-2 text-xs font-bold font-mono tracking-wider rounded transition cursor-pointer ${
                     !selectedFile 
                       ? 'bg-gray-800 text-gray-600 cursor-not-allowed' 
                       : 'bg-[#00e5ff] text-[#060b13] hover:bg-[#00b3cc] shadow-md shadow-[#00e5ff]/10'
@@ -218,6 +203,16 @@ export default function QRShieldAnalyzer() {
               </div>
 
             </div>
+
+            {/* Extracted Payload Output Box (Brought in live payload string tracing) */}
+            {metrics.extractedContent && (
+              <div className="bg-[#0b1424] border border-[#141f32] p-4 rounded-lg font-mono text-xs space-y-1">
+                <span className="text-gray-500 uppercase block tracking-wider text-[10px] font-bold">Decoded Matrix Content:</span>
+                <p className={`${metrics.threatLevel === 'PHISHING' ? 'text-rose-400 font-bold' : 'text-emerald-400'} break-all`}>
+                  {metrics.extractedContent}
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Right Section: Deep Matrix Metrics */}
@@ -232,10 +227,14 @@ export default function QRShieldAnalyzer() {
                     {metrics.reliabilityScore}<span className="text-2xl text-gray-500">%</span>
                   </div>
                   <span className="text-xs text-gray-400 block mt-1">
-                    {metrics.reliabilityScore > 0 ? 'Verified Integrity' : 'Awaiting Backend Link...'}
+                    {metrics.reliabilityScore > 0 
+                      ? (metrics.threatLevel === 'PHISHING' ? 'High Risk Threat Flagged' : 'Verified Integrity Profile') 
+                      : 'Awaiting Backend Link...'}
                   </span>
                 </div>
-                <span className="bg-[#14233c] text-gray-300 text-[10px] font-mono px-2 py-0.5 rounded border border-gray-700">
+                <span className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
+                  metrics.threatLevel === 'PHISHING' ? 'bg-rose-950/50 text-rose-400 border-rose-800/40' : 'bg-[#14233c] text-gray-300 border-gray-700'
+                }`}>
                   {metrics.threatLevel}
                 </span>
               </div>
@@ -248,7 +247,9 @@ export default function QRShieldAnalyzer() {
                     return (
                       <div 
                         key={i} 
-                        className="w-1.5 bg-[#00e5ff] rounded-t-sm transition-all duration-300" 
+                        className={`w-1.5 rounded-t-sm transition-all duration-300 ${
+                          metrics.threatLevel === 'PHISHING' ? 'bg-rose-500' : 'bg-[#00e5ff]'
+                        }`} 
                         style={{ height: `${finalHeight}%` }} 
                       />
                     );
@@ -271,8 +272,8 @@ export default function QRShieldAnalyzer() {
                   </span>
                   <div className="w-full bg-[#141f32] h-1 rounded-full mt-2 overflow-hidden">
                     <div 
-                      className="bg-[#00e5ff] h-full transition-all duration-300" 
-                      style={{ width: `${Math.min((metrics.domainAgeDays / 365) * 10, 100)}%` }} 
+                      className={`h-full transition-all duration-300 ${metrics.threatLevel === 'PHISHING' ? 'bg-rose-500' : 'bg-[#00e5ff]'}`} 
+                      style={{ width: `${Math.min((metrics.domainAgeDays / 365) * 100, 100)}%` }} 
                     />
                   </div>
                 </div>
@@ -280,13 +281,15 @@ export default function QRShieldAnalyzer() {
                 {/* Cryptographic SSL Protocol status */}
                 <div className="bg-[#070d19] border border-[#141f32] p-3 rounded">
                   <span className="text-[10px] text-gray-500 uppercase block font-medium">SSL Security</span>
-                  <span className="text-sm font-bold text-white block mt-2 font-mono truncate">
+                  <span className={`text-xs font-bold block mt-2 font-mono truncate ${
+                    metrics.sslStatus.includes('HTTPS') ? 'text-emerald-400' : 'text-rose-400'
+                  }`}>
                     {metrics.sslStatus}
                   </span>
                   <div className="w-full bg-[#141f32] h-1 rounded-full mt-2 overflow-hidden">
                     <div 
-                      className={`h-full transition-all duration-300 ${metrics.sslStatus === 'VALID' ? 'bg-emerald-400' : 'bg-gray-600'}`} 
-                      style={{ width: metrics.sslStatus === 'VALID' ? '100%' : '0%' }} 
+                      className={`h-full transition-all duration-300 ${metrics.sslStatus.includes('HTTPS') ? 'bg-emerald-400' : 'bg-gray-600'}`} 
+                      style={{ width: metrics.sslStatus.includes('HTTPS') ? '100%' : '0%' }} 
                     />
                   </div>
                 </div>
