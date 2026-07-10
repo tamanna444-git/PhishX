@@ -1,8 +1,10 @@
-from sqlalchemy import Column,Integer,String
+from sqlalchemy import Column, Integer, String
 from backend.app.database.database import Base
-class User(Base):
-    __tablename__= "users"
+
+# Change "User" to "DBUser"
+class DBUser(Base):
+    __tablename__ = "users"
+
     id = Column(Integer, primary_key=True, index=True)
-    name= Column(String)
-    email=Column(String,unique=True)
-    password=Column(String)
+    operator_id = Column(String, unique=True, index=True, nullable=False)
+    neural_key = Column(String, nullable=False)

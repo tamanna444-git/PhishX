@@ -1,9 +1,10 @@
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 
 class UserCreate(BaseModel):
-    operator_id: str
-    neural_key: str
+    # 1. Add aliases to match the frontend keys perfectly
+    operator_id: str = Field(..., alias="operatorId")
+    neural_key: str = Field(..., alias="neuralKey")
 
     @field_validator('operator_id')
     @classmethod
@@ -19,7 +20,17 @@ class UserCreate(BaseModel):
             raise ValueError('Neural Key must be at least 6 characters')
         return v
 
+    # 2. Tell Pydantic to allow using underscores internally in your routes
+    model_config = {
+        "populate_by_name": True
+    }
+
 
 class UserLogin(BaseModel):
-    operator_id: str
-    neural_key: str
+    # Do the exact same thing for the login schema!
+    operator_id: str = Field(..., alias="operatorId")
+    neural_key: str = Field(..., alias="neuralKey")
+
+    model_config = {
+        "populate_by_name": True
+    }
