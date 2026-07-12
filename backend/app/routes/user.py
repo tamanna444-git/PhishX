@@ -1,39 +1,38 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from backend.app.database.database import get_db
-from backend.app.models.user import User
+# 1. Update this import line:
+from backend.app.models.user import DBUser
 from backend.app.schemas.user import UserCreate, UserLogin
 from backend.app.security.hashing import hash_password, verify_password
 
-# CRITICAL FIX: Explicitly initialize the APIRouter instance
 router = APIRouter()
-
-@router.get("/")
-def test():
-    return {"message": "user route working"}
 
 @router.post("/register")
 def register_user(user: UserCreate, db: Session = Depends(get_db)):
-    # Check if user already exists to prevent SQLite duplicate constraints crashing
-    existing_user = db.query(User).filter(User.email == user.email).first()
+    # 2. Query using DBUser
+    existing_user = db.query(DBUser).filter(DBUser.operator_id == user.operator_id).first()
     if existing_user:
-        raise HTTPException(status_code=400, detail="An account with this email already exists.")
+        raise HTTPException(status_code=400, detail="An operator with this ID already exists.")
 
-    new_user = User(
-        name=user.name,
-        email=user.email,
-        password=hash_password(user.password)
+    # 3. Create record using DBUser
+    new_user = DBUser(
+        operator_id=user.operator_id,
+        neural_key=hash_password(user.neural_key)
     )
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
-    return {"message": "user registered successfully", "id": new_user.id}
+    return {"message": "Operator registered successfully", "id": new_user.id}
 
 @router.post("/login")
 def login(user: UserLogin, db: Session = Depends(get_db)):
-    db_user = db.query(User).filter(User.email == user.email).first()
+    # 4. Update login query to use DBUser
+    db_user = db.query(DBUser).filter(DBUser.operator_id == user.operator_id).first()
     if not db_user:
-        raise HTTPException(status_code=400, detail="No user found with this email")
-    if not verify_password(user.password, db_user.password):
-        raise HTTPException(status_code=401, detail="Invalid email or password")
-    return {"message": "Login successful", "id": db_user.id, "name": db_user.name, "email": db_user.email}
+        raise HTTPException(status_code=400, detail="No operator found with this ID")
+
+    if not verify_password(user.neural_key, db_user.neural_key):
+        raise HTTPException(status_code=401, detail="Invalid Operator ID or Neural Key")
+
+    return {"message": "Login successful", "id": db_user.id, "operator_id": db_user.operator_id}
